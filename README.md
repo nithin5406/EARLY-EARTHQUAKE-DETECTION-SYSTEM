@@ -10,6 +10,17 @@ The system is designed for:
 * Fully offline inference on the RP2350 microcontroller.
 
 * Clear, multi-level alerts via LEDs and a buzzer for different confidence levels.
+
+## Motivation
+* Traditional seismic stations are expensive and power hungry.
+
+* Many low-cost “earthquake” sensors use MEMS accelerometers with limited low-frequency performance.
+
+* SM-24 geophones are widely used in seismology and have excellent sensitivity in the 10–240 Hz band, making them ideal for local earthquake and tremor detection.
+
+* Edge Impulse makes it practical to train and deploy a robust classifier that runs on a tiny microcontroller at the edge.
+
+The goal is to show that a sub‑$20 MCU + geophone + ML can provide useful local seismic awareness without internet connectivity or high power.
   
 ## Requirements
 
@@ -24,11 +35,5 @@ The system is designed for:
 * [Edge Impulse CLI](https://docs.edgeimpulse.com/docs/cli-installation).
 * [GNU ARM Embedded Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads).
 * [CMake](https://cmake.org/install/).
-* Rasperry Pi Pico SDK:
-   ```bash
-   git clone -b master https://github.com/raspberrypi/pico-sdk.git
-   cd pico-sdk
-   git submodule update --init
-   export PATH="<Path to Pico SDK>"
-   ```
+* [Rasperry Pi Pico SDK](https://www.raspberrypi.com/documentation/microcontrollers/c_sdk.html).
 
