@@ -39,9 +39,9 @@ include(${PROJECT_FOLDER}/edge-impulse-sdk/cmake/utils.cmake)
 
 target_link_libraries(app pico_stdlib)
 target_link_libraries(app hardware_adc)
-target_link_libraries(app pico_mbedtls)
+
 # Pico W networking with LWIP (provides lwip/sockets.h)
-target_link_libraries(app pico_cyw43_arch_lwip_threadsafe_background)
+
 target_include_directories(app PRIVATE
     ${PROJECT_FOLDER}/tflite-model
     ${PROJECT_FOLDER}/model-parameters

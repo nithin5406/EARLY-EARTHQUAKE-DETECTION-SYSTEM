@@ -52,21 +52,6 @@ typedef unsigned char uint8_t;
 #define WINDOW_SIZE         256         // Sample window for inference
 
 
-/* ========================================================================= */
-/* EDGE IMPULSE MODEL CONFIGURATION                                         */
-/* ========================================================================= */
-
-// These will be replaced with your Edge Impulse exported model
-#define EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE  256
-#define EI_CLASSIFIER_LABEL_COUNT           3
-#define EI_CLASSIFIER_HAS_ANOMALY           0
-
-// Placeholder for Edge Impulse categories
-const char *ei_classifier_inferencing_categories[] = {
-    "noise",
-    "earthquake"
-};
-
 
 /* ========================================================================= */
 /* DATA STRUCTURES                                                           */
