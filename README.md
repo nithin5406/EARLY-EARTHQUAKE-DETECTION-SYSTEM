@@ -1,6 +1,6 @@
-## SM-24 Geophone Earthquake Detection on Raspberry Pi Pico 2 (RP2350)
+# SM-24 Geophone Earthquake Detection on Raspberry Pi Pico 2 (RP2350)
 
-# Project overview
+## Project overview
 This project turns a Raspberry Pi Pico 2 (RP2350) and an SM-24 geophone into a standalone, low-power seismic node that can detect earthquakes and distinguish them from everyday vibrations using Edge Impulse. The model is trained in Edge Impulse and deployed as a C++ library running fully on-device, with real-time inference on streaming geophone data.
 
 The system is designed for:
