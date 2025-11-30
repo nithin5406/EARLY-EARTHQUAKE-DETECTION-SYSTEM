@@ -148,3 +148,25 @@ Predictions (DSP: 2 ms, Classification: 7 ms, Anomaly: 0 ms):
   * **IoT Integration:** Add LoRaWAN (via Grove module) to transmit alerts to a central dashboard.
   * **Triangulation:** Network 3+ units to calculate the epicenter location.
   * **Solar Power:** Integrate a LiPo charger for autonomous remote deployment.
+
+## 8\. References & Acknowledgements
+
+### Code Base & Firmware
+
+  * **Base Firmware:** [Edge Impulse Standalone Inferencing (Pico)](https://github.com/edgeimpulse/example-standalone-inferencing-pico)
+      * *This project utilizes the official Edge Impulse C++ SDK wrapper for the RP2040/RP2350 as the foundation for the inference loop.*
+
+### Dataset Citation
+
+  * **STEAD:** Mousavi, S. M., Sheng, Y., Zhu, W., & Beroza, G. C. (2019). *STanford EArthquake Dataset (STEAD): A Global Data Set of Seismic Signals for AI*. IEEE Access. [View on GitHub](https://github.com/smousavi05/STEAD)
+
+### Component Datasheets
+
+  * **Raspberry Pi Pico 2 (RP2350):** [Technical Documentation](https://www.google.com/search?q=https://www.raspberrypi.com/documentation/microcontrollers/rp2350.html)
+  * **SM-24 Geophone:** [SparkFun Datasheet](https://www.google.com/search?q=https://cdn.sparkfun.com/assets/d/b/6/0/3/SM-24_Datasheet.pdf)
+  * **TI INA333 Amplifier:** [Texas Instruments Data Sheet](https://www.ti.com/lit/ds/symlink/ina333.pdf)
+
+### Tools & Frameworks
+
+  * **Edge Impulse:** [Studio & Documentation](https://docs.edgeimpulse.com/)
+  * **Raspberry Pi Pico SDK:** [C/C++ SDK Repository](https://github.com/raspberrypi/pico-sdk)
