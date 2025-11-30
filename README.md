@@ -1,173 +1,150 @@
-# SM-24 Geophone Early Earthquake Detection on Raspberry Pi Pico 2 (RP2350)
 
-## Project overview
-This project turns a Raspberry Pi Pico 2 (RP2350) and an SM-24 geophone into a standalone, low-power seismic node that can detect earthquakes and distinguish them from everyday vibrations using Edge Impulse. The model is trained in Edge Impulse and deployed as a C++ library running fully on-device, with real-time inference on streaming geophone data.
+# 🌍 Seismic Sense: TinyML Earthquake Guard
 
-The system is designed for:
+**Real-time P-Wave Detection on Raspberry Pi Pico 2 using SM-24 Geophones**
 
-* Early detection of seismic activity using a professional geophone (SM-24).
+> **🏆 Submission for Edge Impulse & HackerEarth Competition**
 
-* Fully offline inference on the RP2350 microcontroller.
+## 1\. Project Overview
 
-* Clear, multi-level alerts via LEDs and a buzzer for different confidence levels.
+Earthquake Early Warning (EEW) systems typically rely on expensive, government-maintained infrastructure. **Seismic Sense** democratizes this technology by bringing low-latency seismic classification to the extreme edge.
+
+By leveraging the **Raspberry Pi Pico 2 (RP2350)** and **Edge Impulse**, this device analyzes the *frequency signature* of ground vibrations in real-time. It detects the subtle, non-destructive Primary waves (P-waves) that precede destructive S-waves, potentially providing seconds of crucial warning time.
 
 **Key Capabilities:**
-* **Fully Offline:** No internet required for inference.
 
-* **Privacy-First:** Processes data on-device; no raw audio/seismic data leaves the board.
+  * **Fully Offline:** No internet required for inference.
+  * **Privacy-First:** Processes data on-device; no raw audio/seismic data leaves the board.
+  * **Low Cost:** Total BOM \< $50 vs. professional seismographs ($1000+).
 
-* **Low Cost:** Total BOM < $50 vs. professional seismographs ($1000+).
+-----
 
-## Motivation
-* Traditional seismic stations are expensive and power hungry.
+## 2\. Hardware Implementation
 
-* Many low-cost “earthquake” sensors use MEMS accelerometers with limited low-frequency performance.
+### 2.1 Bill of Materials
 
-* SM-24 geophones are widely used in seismology and have excellent sensitivity in the 10–240 Hz band, making them ideal for local earthquake and tremor detection.
+| Component | Function | Notes |
+| :--- | :--- | :--- |
+| **Raspberry Pi Pico 2** | MCU | RP2350 (Cortex-M33) |
+| **SM-24 Geophone** | Sensor | 10Hz resonance frequency |
+| **TI INA333** | Amplifier | Low-noise instrumentation amp |
+| **Resistors (10kΩ x2)** | Biasing | Creates 1.65V virtual ground |
+| **Resistor (100Ω)** | Gain | Sets Gain \~1001x |
 
-* Edge Impulse makes it practical to train and deploy a robust classifier that runs on a tiny microcontroller at the edge.
+### 2.2 Circuit Design & Signal Conditioning
 
-The goal is to show that a sub‑$20 MCU + geophone + ML can provide useful local seismic awareness without internet connectivity or high power.
-  
-## Requirements
+The **SM-24 Geophone** produces very low-voltage signals (millivolts) which are often too weak for the Pico 2’s ADC. Furthermore, the geophone produces an AC signal, while the ADC can only read positive voltages (0V-3.3V).
 
-### Hardware
+To solve this, we designed a custom **Analog Front-End (AFE)**:
 
-* [Raspberry Pi Pico 2W](https://www.raspberrypi.com/products/raspberry-pi-pico-2/).
-* [Geophone- SM-24, with insulating disc](https://www.sparkfun.com/geophone-sm-24-with-insulating-disc.html).
-* [INA333 Low-Power, Zero-Drift, Precision Instrumentation Amplifier](https://www.ti.com/product/INA333).
+**Key Circuit Features:**
 
-### Software
+1.  **Differential Amplification:** The SM-24 is connected to the $V_{IN+}$ and $V_{IN-}$ pins of the **TI INA333**. This configuration rejects common-mode noise (like mains hum), ensuring only actual ground movement is amplified.
+2.  **DC Bias (Virtual Ground):** We use a voltage divider (two 10kΩ resistors) to feed **1.65V** into the `REF` pin. This lifts the geophone signal to the middle of the ADC range, allowing the Pico to read the full positive and negative swing of the wave without clipping.
 
-* [Edge Impulse CLI](https://docs.edgeimpulse.com/docs/cli-installation).
-* [GNU ARM Embedded Toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads).
-* [CMake](https://cmake.org/install/).
-* [Rasperry Pi Pico SDK](https://www.raspberrypi.com/documentation/microcontrollers/c_sdk.html).
+![CIRCUIT](CIRCUIT_DIAGRAM.png)
 
-## Data & Model
-### Data source
-This project uses the STEAD (STanford EArthquake Dataset) as the primary training source. STEAD provides labeled seismic waveforms for earthquakes and non‑earthquake signals across many stations and conditions.​
+## 3\. Data Strategy & DSP
 
-* The original STEAD distribution is provided in HDF5 (.hdf5) format. For easier experimentation, faster loading, and integration with the Edge Impulse ingestion scripts, the raw HDF5 files were converted into compressed NumPy .npz arrays:
+### 3.1 Data Source (STEAD)
 
-    * HDF5 → NumPy arrays using h5py and numpy.
+We utilize the **STEAD (STanford EArthquake Dataset)**, a global-scale dataset of labeled seismic waveforms. To adapt this research data for TinyML, we built a custom ETL pipeline:
 
-    * Arrays saved as .npz for:
+1.  **Extraction:** Raw HDF5 waveforms were filtered for local events ($<20$km distance) with high SNR.
+2.  **Serialization:** Converted to **NumPy compressed archives (`.npz`)** for efficient cloud upload.
+3.  **Windowing:** Sliced into windows centered on P-wave arrivals.
 
-    * Faster random access during preprocessing.
+**Classes:**
 
-    * Simpler slicing, labeling, and balancing of classes.
+  * `earthquake` (Distinct spectral signature of P/S waves)
+  * `noise` (Background silence, footsteps, local artifacts)
 
-    * Reduced I/O overhead when generating training and validation sets.​
+### 3.2 Spectral Preprocessing (DSP)
 
-* From these .npz files, preprocessed segments were created and exported to Edge Impulse as time‑series samples with labels such as:
+Instead of feeding raw time-series data to the neural network, we use **Digital Signal Processing (DSP)** to extract frequency features. Earthquakes have specific frequency footprints (typically $<20$Hz) that differ from human-made noise.
 
-    * earthquake
+  * **Input:** Raw Analog Signal (Time Domain).
+  * **Process:** Fast Fourier Transform (FFT).
+  * **Output:** Power Spectral Density (Frequency Domain).
+  * **Input Shape to Model:** `(56, 1)` representing 56 frequency bins.
 
-    * noise
- 
-* The data preparation (Conversion) is done in the file --data-prep/dataset-npz.ipynb and data uploading is done in the file --data-prep/new-earthquake.ipynb
+-----
 
-### Spectral preprocessing
-To make the model robust and efficient on the RP2350, the raw time‑series from the STEAD .npz arrays are first transformed using spectral analysis before entering the neural network:
+## 4\. Model Architecture & Results
 
-* A spectral preprocessing pipeline computes frequency‑domain features from each window:
+### 4.1 Custom 1D CNN
 
-    * Apply a window function.
+We implemented a custom Keras architecture optimized for the **RP2350**. It uses a "MobileNet-style" block with Depthwise Separable Convolutions to minimize parameter count and maximize inference speed.
 
-    * Compute FFT / power spectrum over the segment.
+**Design Rationale:**
 
-    * Optionally aggregate into frequency bands relevant for local seismic events.
+  * **Conv1D on Spectrum:** The model learns to recognize specific "shapes" in the frequency spectrum (e.g., energy spikes at specific low frequencies).
+  * **Depthwise Separable Conv:** Drastically reduces Multiply-Accumulate (MAC) operations, saving battery life.
 
-    * Normalize or log‑scale spectral amplitudes.
+![MODEL](tflite_learn_815551_95.jpg)
 
-These spectral features are then reshaped to a fixed length and fed as a 1D sequence into the Keras model.
+### 4.2 Performance
 
-On-device, the same spectral preprocessing graph generated by Edge Impulse runs before inference, so the RP2350 executes both:
+  * **Validation Accuracy:** \~96%
+  * **Inference Time (RP2350):** \~9 ms total (2ms DSP + 7ms Classification)
+  * **RAM Usage:** Minimal footprint, leaving ample room for application logic.
 
-* DSP (spectral analysis) on the incoming SM‑24 geophone window.
+-----
 
-* Neural network inference on the resulting spectral feature vector.
+## 5\. System Workflow (How it Works)
 
-### Input representation
-* The resulting .npz files are uploaded to Edge Impulse where they are windowed into time-series samples.
+The system operates in a continuous loop:
+`[Geophone] —(mV)→ [Amp] —(ADC)→ [DSP: FFT] —(Features)→ [Neural Net] —(Alert)`
 
-    * Input Type: Raw Time-series (1-axis).
+1.  **Sensing:** The SM-24 generates a voltage proportional to ground velocity.
+2.  **Digitization:** The Pico 2 samples the amplified signal at **500 Hz** into a rolling buffer.
+3.  **Analysis:**
+      * The buffer is passed to the Edge Impulse SDK.
+      * **FFT** converts the signal to the frequency domain.
+      * **CNN** classifies the spectrum.
+4.  **Decision:**
+      * If `earthquake` probability $> 0.8$: **Trigger Alarm** (LED Blink + GPIO HIGH).
+      * Else: Continue monitoring.
 
-    * Window Size: 56 samples (Optimized for P-wave arrival detection).
+-----
 
-    * Classes: earthquake, noise, local_event.
+## 6\. Installation & Deployment
 
-### Model Architecture
-We implemented a custom Keras architecture optimized for the RP2350. It uses a "MobileNet-style" block with Depthwise Separable Convolutions to minimize parameter count and maximize inference speed.
+### Option A: Flash Pre-compiled Firmware (Easiest)
 
-Model Architecture Image Representation
-
-![Model Image](tflite_learn_815551_95.jpg)
-
-### Training Results
-* The model was trained for 30 epochs with an Adam optimizer (LR=0.005).
-
-    * Training Performance: High accuracy achieved on the validation set, **Almost around 96%**.
-
-    * On-Device Inference: The model is deployed as a C++ library. On the Raspberry Pi Pico 2, the inference runs in **9 milliseconds**, leaving ample clock cycles for the main application logic.
-
-## How it Works (System Overview)
-The system operates in a continuous loop on the Raspberry Pi Pico 2, processing ground vibrations in real-time to distinguish between harmless noise and actual seismic events.
-
-### The Hardware Pipeline
-[SM-24 Geophone] —(mV)→ [TI INA333 Amp] —(Volts)→ [Pico 2 ADC] —(Buffer)→ [TinyML Model] —(Alert)
-
-### Step-by-Step Breakdown
-    * Sensing (The Physics): The SM-24 Geophone is strictly coupled to the ground. When the earth vibrates, a mass inside the geophone moves through a magnetic field, generating a tiny analog voltage (millivolts) proportional to the ground velocity.
-
-    * Signal Conditioning (The Amplifier): The raw signal from the geophone is too weak for a microcontroller to read accurately. We use a Texas Instruments INA333 Instrumentation Amplifier to boost this signal.
-
-    * Role: It amplifies the millivolt-level ripples into a strong, readable voltage range (e.g., 0V–3.3V) while rejecting electrical noise/interference.
-
-    * Digitization (The Interface): The Raspberry Pi Pico 2's internal ADC (Analog-to-Digital Converter) samples this amplified voltage 500 times per second (500 Hz). These raw readings are stored in a "rolling buffer" in the chip's RAM.
-
-    * Analysis (The AI): Once the buffer is filled with a snapshot of time, the Edge Impulse C++ library takes over:
-
-    * Inference: The custom 1D CNN scans the signal for specific "signatures"—like the sharp P-wave arrival typical of earthquakes—while ignoring the chaotic patterns of footsteps or traffic.
-
-    * Decision (The Output): The model outputs a probability score for three classes. If the earthquake score exceeds a threshold (e.g., 0.8), the system triggers:
-
-        1. Visual: LED Blinks.
-
-        2. GPIO: Pin goes HIGH (can trigger external relay/alarm).
-
-        3. Serial: Logs the event timestamp.
-
-    The entire process from vibration to decision happens in milliseconds, allowing the device to issue a warning before the more destructive S-waves arrive.
-
-## Hardware Implementation
-### Circuit Design & Signal Conditioning
-The challenge with seismic sensing is that the SM-24 Geophone produces very low-voltage signals (millivolts) which are often too weak for the Raspberry Pi Pico 2’s ADC to detect reliably. 
-
-Furthermore, the geophone produces an AC signal (swinging positive and negative), while the Pico's ADC can only read positive voltages (0V to 3.3V).
-
-To solve this, we designed a custom Analog Front-End (AFE) using the TI INA333 Instrumentation Amplifier.
-
-![Circuit Image](CIRCUIT_DIAGRAM.png)
-
-### Key Circuit Features
-* **Differential Amplification (Noise Rejection):** The SM-24 is connected to the $V_{IN+}$ and $V_{IN-}$ pins of the INA333.This "differential" configuration rejects common-mode noise (electromagnetic interference from nearby wiring or mains hum), ensuring that only the actual ground movement is amplified.
-
-* **DC Bias (The "Virtual Ground")** 
-    * Problem : The Pico ADC cannot read negative voltages (below 0V).
-
-    * Solution: We created a voltage divider using two 10kΩ resistors connected to the 3.3V rail. This feeds exactly 1.65V into the REF pin of the INA333.
-
-    * Result: The geophone's signal is "lifted" to center around 1.65V. A complete silence from the sensor reads as 1.65V, while vibrations swing the voltage up (towards 3.3V) and down (towards 0V), capturing the full waveform without clipping.
-
-* **Gain Setting:** A gain resistor ($R_G$) is placed between pins 1 and 8
-
-* **Formula:** $Gain = 1 + (100k\Omega / R_G)$We tuned this gain to maximize sensitivity to local vibrations without saturating the ADC during minor bumps.
-
-## 8. Future Roadmap
-* **IoT Integration:** Add LoRaWAN (via Grove module) to transmit alerts to a central dashboard.
-
-* **Triangulation:** Network 3+ units to calculate the epicenter location.
-
-* **Solar Power:** Integrate a LiPo charger for completely autonomous remote deployment.
+1.  Download `firmware.uf2` from the **Releases** section of this repo.
+2.  Hold the `BOOTSEL` button on your Pico 2 and plug it into USB.
+3.  Drag and drop `firmware.uf2` into the `RPI-RP2` drive.
+
+### Option B: Build from Source
+
+1.  Clone this repository:
+    ```bash
+    git clone https://github.com/your-username/seismic-sense.git
+    cd seismic-sense
+    ```
+2.  Create build directory and compile:
+    ```bash
+    mkdir build && cd build
+    cmake ..
+    make -j4
+    ```
+3.  Flash the resulting `.uf2` file.
+
+### Verifying Operation
+
+Open a serial monitor (e.g., PuTTY) at **115200 baud**. You will see the breakdown of processing time:
+
+```text
+Predictions (DSP: 2 ms, Classification: 7 ms, Anomaly: 0 ms):
+    earthquake:  0.02
+    noise:       0.98
+```
+
+-----
+
+## 7\. Future Roadmap
+
+  * **IoT Integration:** Add LoRaWAN (via Grove module) to transmit alerts to a central dashboard.
+  * **Triangulation:** Network 3+ units to calculate the epicenter location.
+  * **Solar Power:** Integrate a LiPo charger for autonomous remote deployment.
