@@ -152,7 +152,7 @@ To solve this, we designed a custom Analog Front-End (AFE) using the TI INA333 I
 ![Circuit Image](CIRCUIT_DIAGRAM.png)
 
 ### Key Circuit Features
-* **Differential Amplification (Noise Rejection):**The SM-24 is connected to the $V_{IN+}$ and $V_{IN-}$ pins of the INA333.This "differential" configuration rejects common-mode noise (electromagnetic interference from nearby wiring or mains hum), ensuring that only the actual ground movement is amplified.
+* **Differential Amplification (Noise Rejection):** The SM-24 is connected to the $V_{IN+}$ and $V_{IN-}$ pins of the INA333.This "differential" configuration rejects common-mode noise (electromagnetic interference from nearby wiring or mains hum), ensuring that only the actual ground movement is amplified.
 
 * **DC Bias (The "Virtual Ground")** 
     * Problem : The Pico ADC cannot read negative voltages (below 0V).
