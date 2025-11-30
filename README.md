@@ -4,7 +4,7 @@
 **Real-time P-Wave Detection on Raspberry Pi Pico 2 using SM-24 Geophones**
 
 > **🏆 Submission for Edge Impulse & HackerEarth Competition**
-
+[EDGE-IMPULSE-PROJECT](https://studio.edgeimpulse.com/public/815551/live).
 ## 1\. Project Overview
 
 Earthquake Early Warning (EEW) systems typically rely on expensive, government-maintained infrastructure. **Seismic Sense** democratizes this technology by bringing low-latency seismic classification to the extreme edge.
@@ -85,7 +85,7 @@ We implemented a custom Keras architecture optimized for the **RP2350**. It uses
 
 ### 4.2 Performance
 
-  * **Validation Accuracy:** \~96%
+  * **Validation Accuracy:** \~95%
   * **Inference Time (RP2350):** \~9 ms total (2ms DSP + 7ms Classification)
   * **RAM Usage:** Minimal footprint, leaving ample room for application logic.
 
