@@ -5,7 +5,7 @@
 
 > **🏆 Submission for Edge Impulse & HackerEarth Competition**
 [EDGE-IMPULSE-PROJECT](https://studio.edgeimpulse.com/public/815551/live).
-[PPT](Seismic Sense Presentation (1).pdf).
+[PPT](Seismic-Sense-Presentation.pdf).
 ## 1\. Project Overview
 
 Earthquake Early Warning (EEW) systems typically rely on expensive, government-maintained infrastructure. **Seismic Sense** democratizes this technology by bringing low-latency seismic classification to the extreme edge.
