@@ -85,7 +85,7 @@ We implemented a custom Keras architecture optimized for the **RP2350**. It uses
 
 ### 4.2 Performance
 
-  * **Validation Accuracy:** \~96%
+  * **Validation Accuracy:** \~95%
   * **Inference Time (RP2350):** \~9 ms total (2ms DSP + 7ms Classification)
   * **RAM Usage:** Minimal footprint, leaving ample room for application logic.
 
