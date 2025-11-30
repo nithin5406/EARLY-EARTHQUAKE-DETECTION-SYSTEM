@@ -51,7 +51,7 @@ To solve this, we designed a custom **Analog Front-End (AFE)**:
 
 We utilize the **STEAD (STanford EArthquake Dataset)**, a global-scale dataset of labeled seismic waveforms. To adapt this research data for TinyML, we built a custom ETL pipeline:
 
-1.  **Extraction:** Raw HDF5 waveforms were filtered for local events ($<20$km distance) with high SNR.
+1.  **Extraction:** Raw HDF5 waveforms were filtered for local events ($<20$km distance) with high SNR. [Extraction File](data-prep/dataset-npz.ipynb).[Uploading to Edge Impulse](data-prep/new-earthquake.ipynb).
 2.  **Serialization:** Converted to **NumPy compressed archives (`.npz`)** for efficient cloud upload.
 3.  **Windowing:** Sliced into windows centered on P-wave arrivals.
 
@@ -90,7 +90,7 @@ We implemented a custom Keras architecture optimized for the **RP2350**. It uses
   * **Inference Time (RP2350):** \~9 ms total (2ms DSP + 7ms Classification)
   * **RAM Usage:** Minimal footprint, leaving ample room for application logic.
 
------
+
 
 ## 5\. System Workflow (How it Works)
 
@@ -107,7 +107,7 @@ The system operates in a continuous loop:
       * If `earthquake` probability $> 0.8$: **Trigger Alarm** (LED Blink + GPIO HIGH).
       * Else: Continue monitoring.
 
------
+5. **Source Code** [Source code file](Micro\source\main.cpp). All Hardware Implementation code is present in the directory 'Micro'.
 
 ## 6\. Installation & Deployment
 
